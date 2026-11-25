@@ -1,42 +1,15 @@
 'use client';
-// PAGE 3: Signup Page  →  Route: /signup
-// Client Component for interactive form handling
 
-import { useState } from 'react';
+import { useActionState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { signupAction } from '@/app/actions/auth';
 import Button from '@/app/components/Button';
 
 export default function SignupPage() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const router = useRouter();
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
-      return;
-    }
-
-    setLoading(true);
-
-    // Simulate account creation (replace with Supabase signup later)
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // On success, redirect to dashboard
-    router.push('/dashboard');
-  }
+  const [state, formAction, pending] = useActionState(signupAction, undefined);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-      {/* Logo */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <Link href="/" className="inline-flex items-center gap-2 font-bold text-gray-900 text-xl">
           <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
@@ -53,66 +26,63 @@ export default function SignupPage() {
         </p>
       </div>
 
-      {/* Form Card */}
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-6 shadow-sm rounded-2xl border border-gray-200 sm:px-10">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {error && (
+          <form action={formAction} className="space-y-5">
+            {state?.error && (
               <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
-                {error}
+                {state.error}
               </div>
             )}
 
-            {/* Full name */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Full name
               </label>
               <input
-                id="name"
+                id="fullName"
+                name="fullName"
                 type="text"
                 required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                autoComplete="name"
                 placeholder="Alice Johnson"
                 className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
             </div>
 
-            {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Work email
               </label>
               <input
                 id="email"
+                name="email"
                 type="email"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 placeholder="you@company.com"
                 className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
             </div>
 
-            {/* Password */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Password
               </label>
               <input
                 id="password"
+                name="password"
                 type="password"
                 required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                minLength={8}
+                autoComplete="new-password"
                 placeholder="At least 8 characters"
                 className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
             </div>
 
-            <Button type="submit" fullWidth disabled={loading}>
-              {loading ? 'Creating account…' : 'Create free account'}
+            <Button type="submit" fullWidth disabled={pending}>
+              {pending ? 'Creating account…' : 'Create free account'}
             </Button>
           </form>
 
@@ -124,7 +94,6 @@ export default function SignupPage() {
           </p>
         </div>
 
-        {/* Social proof */}
         <div className="mt-6 text-center">
           <div className="flex items-center justify-center gap-6 text-sm text-gray-400">
             <span>✅ Free forever for small teams</span>

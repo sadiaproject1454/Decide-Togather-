@@ -1,16 +1,41 @@
-// PAGE 7: Decision Details Page  →  Route: /decisions/[id]
-// Server Component wrapper — exports generateStaticParams and passes id to client UI
-// (Cannot mix 'use client' with generateStaticParams, so we split into two files)
-
-import { SAMPLE_DECISIONS } from '@/app/lib/data';
+import { Suspense } from 'react';
+import { connection } from 'next/server';
+import { notFound } from 'next/navigation';
+import AuthenticatedShell from '@/app/components/AuthenticatedShell';
+import { requireUser } from '@/app/lib/auth';
+import { getDecisionDetails } from '@/app/lib/db';
 import DecisionDetailClient from './DecisionDetailClient';
 
-// Tell Next.js which decision IDs to pre-render at build time
-export function generateStaticParams() {
-  return SAMPLE_DECISIONS.map((d) => ({ id: d.id }));
+async function DecisionDetailContent({
+  paramsPromise,
+}: {
+  paramsPromise: Promise<{ id: string }>;
+}) {
+  await connection();
+  await requireUser();
+  const { id } = await paramsPromise;
+  const decisionId = Number(id);
+
+  if (!Number.isFinite(decisionId) || decisionId <= 0) {
+    notFound();
+  }
+
+  const data = await getDecisionDetails(decisionId);
+  if (!data) {
+    notFound();
+  }
+
+  return (
+    <AuthenticatedShell>
+      <DecisionDetailClient decision={data.decision} workspaceName={data.workspaceName} />
+    </AuthenticatedShell>
+  );
 }
 
-export default async function DecisionDetailPage(props: PageProps<'/decisions/[id]'>) {
-  const { id } = await props.params;
-  return <DecisionDetailClient id={id} />;
+export default function DecisionDetailPage(props: PageProps<'/decisions/[id]'>) {
+  return (
+    <Suspense fallback={<div className="p-8 text-sm text-gray-400">Loading decision…</div>}>
+      <DecisionDetailContent paramsPromise={props.params} />
+    </Suspense>
+  );
 }
