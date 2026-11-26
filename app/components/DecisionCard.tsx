@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { DecisionItem, getLeadingOption } from '@/app/lib/types';
+import type { DecisionItem } from '@/app/lib/types';
 import { StatusBadge } from './Badge';
 
 interface DecisionCardProps {
@@ -8,9 +8,6 @@ interface DecisionCardProps {
 }
 
 export default function DecisionCard({ decision }: DecisionCardProps) {
-  const leading = getLeadingOption(decision.options);
-  const totalVotes = decision.options.reduce((sum, o) => sum + o.votes, 0);
-
   return (
     <Link
       href={`/decisions/${decision.id}`}
@@ -23,38 +20,24 @@ export default function DecisionCard({ decision }: DecisionCardProps) {
         <StatusBadge status={decision.status} />
       </div>
 
-      <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 mb-4">
+      <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 mb-4 min-h-[2.25rem]">
         {decision.description || 'No description provided.'}
       </p>
 
-      {leading && totalVotes > 0 && (
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-gray-500">
-              Leading: <span className="font-medium text-gray-700">{leading.label}</span>
-            </span>
-            <span className="text-xs text-gray-400">
-              {leading.votes}/{totalVotes} votes
-            </span>
-          </div>
-          <div className="w-full bg-gray-100 rounded-full h-1.5">
-            <div
-              className="bg-indigo-500 h-1.5 rounded-full transition-all"
-              style={{ width: `${totalVotes > 0 ? (leading.votes / totalVotes) * 100 : 0}%` }}
-            />
-          </div>
-        </div>
-      )}
-
-      <div className="flex items-center justify-between text-xs text-gray-400">
-        <span>{decision.options.length} options</span>
+      <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
+        <span>
+          {decision.options.length} option{decision.options.length === 1 ? '' : 's'}
+        </span>
         <span>
           {decision.deadline
             ? `Deadline: ${new Date(decision.deadline).toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric',
               })}`
-            : `${totalVotes} votes`}
+            : `Created ${new Date(decision.created_at).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+              })}`}
         </span>
       </div>
     </Link>

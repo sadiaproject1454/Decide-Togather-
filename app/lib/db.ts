@@ -128,21 +128,46 @@ export async function getAllUserDecisions(): Promise<DecisionItem[]> {
   }));
 }
 
-export async function getDecisionDetails(decisionId: number): Promise<{
+export async function getDecisionDetails(
+  decisionId: number,
+  currentUserId?: string
+): Promise<{
   decision: DecisionItem;
   workspaceName: string;
+  creatorName: string;
+  canManage: boolean;
 } | null> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('decisions')
-    .select('*, decision_options(*), workspaces(name)')
+    .select(
+      '*, decision_options(*), workspaces(name, owner_id), users!decisions_created_by_fkey(full_name, email)'
+    )
     .eq('id', decisionId)
     .maybeSingle();
 
   if (error || !data) return null;
 
   const wsObj = Array.isArray(data.workspaces) ? data.workspaces[0] : data.workspaces;
+  const creatorObj = Array.isArray(data.users) ? data.users[0] : data.users;
+  const creatorName =
+    creatorObj?.full_name?.trim() || creatorObj?.email || 'Team Member';
+
+  let canManage = false;
+  if (currentUserId) {
+    if (data.created_by === currentUserId || wsObj?.owner_id === currentUserId) {
+      canManage = true;
+    } else {
+      const { data: membership } = await supabase
+        .from('workspace_members')
+        .select('role')
+        .eq('workspace_id', data.workspace_id)
+        .eq('user_id', currentUserId)
+        .maybeSingle();
+      canManage = membership?.role === 'admin';
+    }
+  }
 
   return {
     decision: {
@@ -157,5 +182,7 @@ export async function getDecisionDetails(decisionId: number): Promise<{
       options: (data.decision_options ?? []).sort((a, b) => a.id - b.id),
     },
     workspaceName: wsObj?.name ?? 'Workspace',
+    creatorName,
+    canManage,
   };
 }

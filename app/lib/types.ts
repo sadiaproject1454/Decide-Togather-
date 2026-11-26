@@ -63,8 +63,3 @@ export function getInitials(nameOrEmail: string): string {
   }
   return cleaned.slice(0, 2).toUpperCase();
 }
-
-export function getLeadingOption(options: DecisionOptionItem[]): DecisionOptionItem | null {
-  if (options.length === 0) return null;
-  return options.reduce((prev, curr) => (curr.votes > prev.votes ? curr : prev));
-}

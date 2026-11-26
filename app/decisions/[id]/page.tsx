@@ -12,22 +12,27 @@ async function DecisionDetailContent({
   paramsPromise: Promise<{ id: string }>;
 }) {
   await connection();
-  await requireUser();
+  const currentUser = await requireUser();
   const { id } = await paramsPromise;
   const decisionId = Number(id);
 
-  if (!Number.isFinite(decisionId) || decisionId <= 0) {
+  if (!Number.isInteger(decisionId) || decisionId <= 0) {
     notFound();
   }
 
-  const data = await getDecisionDetails(decisionId);
+  const data = await getDecisionDetails(decisionId, currentUser.id);
   if (!data) {
     notFound();
   }
 
   return (
     <AuthenticatedShell>
-      <DecisionDetailClient decision={data.decision} workspaceName={data.workspaceName} />
+      <DecisionDetailClient
+        decision={data.decision}
+        workspaceName={data.workspaceName}
+        creatorName={data.creatorName}
+        canManage={data.canManage}
+      />
     </AuthenticatedShell>
   );
 }

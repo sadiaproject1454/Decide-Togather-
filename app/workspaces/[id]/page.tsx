@@ -10,6 +10,7 @@ import { requireUser } from '@/app/lib/auth';
 import { getWorkspaceDetails } from '@/app/lib/db';
 import { getInitials } from '@/app/lib/types';
 import WorkspaceManageControls from './WorkspaceManageControls';
+import DeletedDecisionBanner from './DeletedDecisionBanner';
 
 async function WorkspaceContent({ paramsPromise }: { paramsPromise: Promise<{ id: string }> }) {
   await connection();
@@ -79,8 +80,12 @@ async function WorkspaceContent({ paramsPromise }: { paramsPromise: Promise<{ id
             </div>
           </div>
 
-          <Button href="/decisions/new">+ New Decision</Button>
+          <Button href={`/decisions/new?workspaceId=${workspace.id}`}>+ New Decision</Button>
         </div>
+
+        <Suspense fallback={null}>
+          <DeletedDecisionBanner />
+        </Suspense>
 
         {/* Edit & Delete Workspace Controls */}
         <WorkspaceManageControls
@@ -101,7 +106,7 @@ async function WorkspaceContent({ paramsPromise }: { paramsPromise: Promise<{ id
             {decisions.length === 0 ? (
               <div className="bg-white border border-dashed border-gray-200 rounded-xl p-10 text-center">
                 <p className="text-sm text-gray-400 mb-4">No decisions yet in this workspace.</p>
-                <Button href="/decisions/new" variant="outline" size="sm">
+                <Button href={`/decisions/new?workspaceId=${workspace.id}`} variant="outline" size="sm">
                   Create the first decision
                 </Button>
               </div>
