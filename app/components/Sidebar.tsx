@@ -15,14 +15,13 @@ export default function Sidebar({ user, workspaces }: SidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const firstWorkspaceHref = workspaces[0] ? `/workspaces/${workspaces[0].id}` : '/dashboard';
   const displayName = user.full_name?.trim() || user.email.split('@')[0] || 'User';
   const initials = getInitials(displayName);
 
   const navItems = [
     { label: 'Dashboard', href: '/dashboard', icon: '🏠' },
+    { label: 'Workspaces', href: '/workspaces', icon: '🗂️', matchPrefix: '/workspaces' },
     { label: 'Decisions', href: '/decisions', icon: '🗳️' },
-    { label: 'Workspaces', href: firstWorkspaceHref, icon: '🗂️', matchPrefix: '/workspaces' },
     { label: 'Profile', href: '/profile', icon: '👤' },
   ];
 

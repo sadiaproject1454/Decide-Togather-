@@ -6,7 +6,7 @@ import Button from '@/app/components/Button';
 import DecisionCard from '@/app/components/DecisionCard';
 import { requireUser } from '@/app/lib/auth';
 import { getAllUserDecisions, getUserWorkspaces } from '@/app/lib/db';
-import CreateWorkspaceForm from './CreateWorkspaceForm';
+import CreateWorkspaceForm from '@/app/components/CreateWorkspaceForm';
 
 function StatCard({
   label,
@@ -96,28 +96,39 @@ async function DashboardContent() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold text-gray-900">Your Workspaces</h2>
+              <Link href="/workspaces" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+                View all →
+              </Link>
             </div>
-            <div className="space-y-3 mb-4">
-              {workspaces.map((ws) => (
-                <Link
-                  key={ws.id}
-                  href={`/workspaces/${ws.id}`}
-                  className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:border-indigo-300 hover:shadow-sm transition-all group"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm shrink-0">
-                    {ws.name[0]?.toUpperCase() ?? 'W'}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 group-hover:text-indigo-700 truncate">
-                      {ws.name}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {ws.memberCount} members · {ws.decisionCount} decisions
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            {workspaces.length === 0 ? (
+              <div className="bg-white border border-dashed border-gray-200 rounded-xl p-6 text-center mb-4">
+                <p className="text-xs text-gray-500">
+                  No workspaces yet. Create one below to get started.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3 mb-4">
+                {workspaces.map((ws) => (
+                  <Link
+                    key={ws.id}
+                    href={`/workspaces/${ws.id}`}
+                    className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:border-indigo-300 hover:shadow-sm transition-all group"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm shrink-0">
+                      {ws.name[0]?.toUpperCase() ?? 'W'}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 group-hover:text-indigo-700 truncate">
+                        {ws.name}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {ws.memberCount} members · {ws.decisionCount} decisions
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
 
             <CreateWorkspaceForm />
 

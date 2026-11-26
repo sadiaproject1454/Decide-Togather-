@@ -2,7 +2,7 @@
 // Usage: <Badge status="open" /> or <Badge label="Admin" color="purple" />
 
 import React from 'react';
-import { DecisionStatus } from '@/app/lib/data';
+import { DecisionStatus } from '@/app/lib/types';
 
 interface StatusBadgeProps {
   status: DecisionStatus;
