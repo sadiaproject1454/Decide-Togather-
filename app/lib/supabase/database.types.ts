@@ -92,6 +92,71 @@ export type Database = {
           },
         ]
       }
+      evidence: {
+        Row: {
+          created_at: string
+          created_by: string
+          decision_id: number
+          description: string | null
+          id: number
+          source_url: string | null
+          title: string
+          updated_at: string
+          workspace_id: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          decision_id: number
+          description?: string | null
+          id?: never
+          source_url?: string | null
+          title: string
+          updated_at?: string
+          workspace_id: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          decision_id?: number
+          description?: string | null
+          id?: never
+          source_url?: string | null
+          title?: string
+          updated_at?: string
+          workspace_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "decisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_decision_workspace_fkey"
+            columns: ["decision_id", "workspace_id"]
+            isOneToOne: false
+            referencedRelation: "decisions"
+            referencedColumns: ["id", "workspace_id"]
+          },
+          {
+            foreignKeyName: "evidence_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           avatar_url: string | null

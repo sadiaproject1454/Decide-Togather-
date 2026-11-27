@@ -32,6 +32,7 @@ async function DecisionDetailContent({
         workspaceName={data.workspaceName}
         creatorName={data.creatorName}
         canManage={data.canManage}
+        evidence={data.evidence}
       />
     </AuthenticatedShell>
   );

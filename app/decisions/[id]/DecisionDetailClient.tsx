@@ -5,13 +5,15 @@ import Link from 'next/link';
 import { deleteDecisionAction, updateDecisionAction } from '@/app/actions/decisions';
 import { StatusBadge } from '@/app/components/Badge';
 import Button from '@/app/components/Button';
-import type { DecisionItem, DecisionStatus } from '@/app/lib/types';
+import type { DecisionItem, DecisionStatus, EvidenceItem } from '@/app/lib/types';
+import EvidenceSection from './EvidenceSection';
 
 interface Props {
   decision: DecisionItem;
   workspaceName: string;
   creatorName: string;
   canManage: boolean;
+  evidence: EvidenceItem[];
 }
 
 interface EditableOption {
@@ -31,6 +33,7 @@ export default function DecisionDetailClient({
   workspaceName,
   creatorName,
   canManage,
+  evidence,
 }: Props) {
   const [mode, setMode] = useState<'view' | 'edit' | 'delete'>('view');
   const [clientError, setClientError] = useState('');
@@ -446,8 +449,8 @@ export default function DecisionDetailClient({
 
       {/* Main Details Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Options List */}
-        <div className="md:col-span-2">
+        {/* Options & Evidence */}
+        <div className="md:col-span-2 space-y-6">
           <div className="bg-white border border-gray-200 rounded-xl p-5 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold text-gray-900">
@@ -477,6 +480,12 @@ export default function DecisionDetailClient({
               </ul>
             )}
           </div>
+
+          <EvidenceSection
+            decisionId={decision.id}
+            workspaceId={decision.workspace_id}
+            evidence={evidence}
+          />
         </div>
 
         {/* Navigation / Metadata Sidebar */}

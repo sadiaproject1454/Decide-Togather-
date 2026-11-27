@@ -54,6 +54,20 @@ export interface DecisionItem {
   options: DecisionOptionItem[];
 }
 
+export interface EvidenceItem {
+  id: number;
+  decision_id: number;
+  workspace_id: number;
+  title: string;
+  description: string | null;
+  source_url: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  creatorName: string;
+  canManage: boolean;
+}
+
 export function getInitials(nameOrEmail: string): string {
   const cleaned = nameOrEmail.trim();
   if (!cleaned) return 'U';

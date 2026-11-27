@@ -2,6 +2,7 @@ import { createClient } from '@/app/lib/supabase/server';
 import type {
   DecisionItem,
   DecisionStatus,
+  EvidenceItem,
   WorkspaceMemberItem,
   WorkspaceSummary,
 } from '@/app/lib/types';
@@ -136,6 +137,7 @@ export async function getDecisionDetails(
   workspaceName: string;
   creatorName: string;
   canManage: boolean;
+  evidence: EvidenceItem[];
 } | null> {
   const supabase = await createClient();
 
@@ -154,9 +156,11 @@ export async function getDecisionDetails(
   const creatorName =
     creatorObj?.full_name?.trim() || creatorObj?.email || 'Team Member';
 
+  let isWorkspaceAdmin = false;
   let canManage = false;
   if (currentUserId) {
-    if (data.created_by === currentUserId || wsObj?.owner_id === currentUserId) {
+    if (wsObj?.owner_id === currentUserId) {
+      isWorkspaceAdmin = true;
       canManage = true;
     } else {
       const { data: membership } = await supabase
@@ -165,9 +169,38 @@ export async function getDecisionDetails(
         .eq('workspace_id', data.workspace_id)
         .eq('user_id', currentUserId)
         .maybeSingle();
-      canManage = membership?.role === 'admin';
+      isWorkspaceAdmin = membership?.role === 'admin';
+      canManage = data.created_by === currentUserId || isWorkspaceAdmin;
     }
   }
+
+  const { data: evidenceRows } = await supabase
+    .from('evidence')
+    .select('*, users!evidence_created_by_fkey(full_name, email)')
+    .eq('decision_id', decisionId)
+    .eq('workspace_id', data.workspace_id)
+    .order('created_at', { ascending: false });
+
+  const evidence: EvidenceItem[] = (evidenceRows ?? []).map((row) => {
+    const evCreator = Array.isArray(row.users) ? row.users[0] : row.users;
+    const evCreatorName =
+      evCreator?.full_name?.trim() || evCreator?.email || 'Team Member';
+    return {
+      id: row.id,
+      decision_id: row.decision_id,
+      workspace_id: row.workspace_id,
+      title: row.title,
+      description: row.description,
+      source_url: row.source_url,
+      created_by: row.created_by,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      creatorName: evCreatorName,
+      canManage: Boolean(
+        currentUserId && (row.created_by === currentUserId || isWorkspaceAdmin)
+      ),
+    };
+  });
 
   return {
     decision: {
@@ -184,5 +217,6 @@ export async function getDecisionDetails(
     workspaceName: wsObj?.name ?? 'Workspace',
     creatorName,
     canManage,
+    evidence,
   };
 }
