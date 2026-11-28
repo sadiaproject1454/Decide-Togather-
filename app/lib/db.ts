@@ -1,8 +1,10 @@
 import { createClient } from '@/app/lib/supabase/server';
 import type {
   DecisionItem,
+  DecisionOptionPointItem,
   DecisionStatus,
   EvidenceItem,
+  OptionPointType,
   WorkspaceMemberItem,
   WorkspaceSummary,
 } from '@/app/lib/types';
@@ -138,6 +140,7 @@ export async function getDecisionDetails(
   creatorName: string;
   canManage: boolean;
   evidence: EvidenceItem[];
+  optionPoints: DecisionOptionPointItem[];
 } | null> {
   const supabase = await createClient();
 
@@ -174,12 +177,20 @@ export async function getDecisionDetails(
     }
   }
 
-  const { data: evidenceRows } = await supabase
-    .from('evidence')
-    .select('*, users!evidence_created_by_fkey(full_name, email)')
-    .eq('decision_id', decisionId)
-    .eq('workspace_id', data.workspace_id)
-    .order('created_at', { ascending: false });
+  const [{ data: evidenceRows }, { data: pointRows }] = await Promise.all([
+    supabase
+      .from('evidence')
+      .select('*, users!evidence_created_by_fkey(full_name, email)')
+      .eq('decision_id', decisionId)
+      .eq('workspace_id', data.workspace_id)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('decision_option_points')
+      .select('*, users!decision_option_points_created_by_fkey(full_name, email)')
+      .eq('decision_id', decisionId)
+      .eq('workspace_id', data.workspace_id)
+      .order('created_at', { ascending: true }),
+  ]);
 
   const evidence: EvidenceItem[] = (evidenceRows ?? []).map((row) => {
     const evCreator = Array.isArray(row.users) ? row.users[0] : row.users;
@@ -202,6 +213,27 @@ export async function getDecisionDetails(
     };
   });
 
+  const optionPoints: DecisionOptionPointItem[] = (pointRows ?? []).map((row) => {
+    const ptCreator = Array.isArray(row.users) ? row.users[0] : row.users;
+    const ptCreatorName =
+      ptCreator?.full_name?.trim() || ptCreator?.email || 'Team Member';
+    return {
+      id: row.id,
+      decision_id: row.decision_id,
+      decision_option_id: row.decision_option_id,
+      workspace_id: row.workspace_id,
+      type: (row.type === 'con' ? 'con' : 'pro') as OptionPointType,
+      content: row.content,
+      created_by: row.created_by,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      creatorName: ptCreatorName,
+      canManage: Boolean(
+        currentUserId && (row.created_by === currentUserId || isWorkspaceAdmin)
+      ),
+    };
+  });
+
   return {
     decision: {
       id: data.id,
@@ -218,5 +250,6 @@ export async function getDecisionDetails(
     creatorName,
     canManage,
     evidence,
+    optionPoints,
   };
 }

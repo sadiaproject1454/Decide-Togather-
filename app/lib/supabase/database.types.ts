@@ -12,6 +12,85 @@ export type Database = {
   }
   public: {
     Tables: {
+      decision_option_points: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          decision_id: number
+          decision_option_id: number
+          id: number
+          type: string
+          updated_at: string
+          workspace_id: number
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          decision_id: number
+          decision_option_id: number
+          id?: never
+          type: string
+          updated_at?: string
+          workspace_id: number
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          decision_id?: number
+          decision_option_id?: number
+          id?: never
+          type?: string
+          updated_at?: string
+          workspace_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decision_option_points_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_option_points_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "decisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_option_points_decision_option_id_fkey"
+            columns: ["decision_option_id"]
+            isOneToOne: false
+            referencedRelation: "decision_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_option_points_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dop_decision_workspace_fkey"
+            columns: ["decision_id", "workspace_id"]
+            isOneToOne: false
+            referencedRelation: "decisions"
+            referencedColumns: ["id", "workspace_id"]
+          },
+          {
+            foreignKeyName: "dop_option_decision_fkey"
+            columns: ["decision_option_id", "decision_id"]
+            isOneToOne: false
+            referencedRelation: "decision_options"
+            referencedColumns: ["id", "decision_id"]
+          },
+        ]
+      }
       decision_options: {
         Row: {
           created_at: string

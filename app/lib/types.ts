@@ -68,6 +68,22 @@ export interface EvidenceItem {
   canManage: boolean;
 }
 
+export type OptionPointType = 'pro' | 'con';
+
+export interface DecisionOptionPointItem {
+  id: number;
+  decision_id: number;
+  decision_option_id: number;
+  workspace_id: number;
+  type: OptionPointType;
+  content: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  creatorName: string;
+  canManage: boolean;
+}
+
 export function getInitials(nameOrEmail: string): string {
   const cleaned = nameOrEmail.trim();
   if (!cleaned) return 'U';

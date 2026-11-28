@@ -33,6 +33,7 @@ async function DecisionDetailContent({
         creatorName={data.creatorName}
         canManage={data.canManage}
         evidence={data.evidence}
+        optionPoints={data.optionPoints}
       />
     </AuthenticatedShell>
   );

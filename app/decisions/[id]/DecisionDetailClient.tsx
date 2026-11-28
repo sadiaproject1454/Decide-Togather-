@@ -5,8 +5,14 @@ import Link from 'next/link';
 import { deleteDecisionAction, updateDecisionAction } from '@/app/actions/decisions';
 import { StatusBadge } from '@/app/components/Badge';
 import Button from '@/app/components/Button';
-import type { DecisionItem, DecisionStatus, EvidenceItem } from '@/app/lib/types';
+import type {
+  DecisionItem,
+  DecisionOptionPointItem,
+  DecisionStatus,
+  EvidenceItem,
+} from '@/app/lib/types';
 import EvidenceSection from './EvidenceSection';
+import OptionPointsSection from './OptionPointsSection';
 
 interface Props {
   decision: DecisionItem;
@@ -14,6 +20,7 @@ interface Props {
   creatorName: string;
   canManage: boolean;
   evidence: EvidenceItem[];
+  optionPoints: DecisionOptionPointItem[];
 }
 
 interface EditableOption {
@@ -34,6 +41,7 @@ export default function DecisionDetailClient({
   creatorName,
   canManage,
   evidence,
+  optionPoints,
 }: Props) {
   const [mode, setMode] = useState<'view' | 'edit' | 'delete'>('view');
   const [clientError, setClientError] = useState('');
@@ -463,18 +471,28 @@ export default function DecisionDetailClient({
                 No options found for this decision.
               </div>
             ) : (
-              <ul className="space-y-3">
+              <ul className="space-y-4">
                 {decision.options.map((option, index) => (
                   <li
                     key={option.id}
-                    className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 bg-gray-50/50"
+                    className="p-4 sm:p-5 rounded-xl border border-gray-200 bg-gray-50/60"
                   >
-                    <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold shrink-0">
-                      {index + 1}
-                    </span>
-                    <span className="text-sm font-medium text-gray-900 break-words">
-                      {option.label}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold shrink-0">
+                        {index + 1}
+                      </span>
+                      <span className="text-sm sm:text-base font-semibold text-gray-900 break-words">
+                        {option.label}
+                      </span>
+                    </div>
+
+                    <OptionPointsSection
+                      decisionId={decision.id}
+                      optionId={option.id}
+                      optionLabel={option.label}
+                      workspaceId={decision.workspace_id}
+                      points={optionPoints.filter((p) => p.decision_option_id === option.id)}
+                    />
                   </li>
                 ))}
               </ul>
