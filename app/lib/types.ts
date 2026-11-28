@@ -1,4 +1,5 @@
 export type DecisionStatus = 'open' | 'voting' | 'closed';
+export type WorkspaceRole = 'admin' | 'member';
 
 export interface UserProfile {
   id: string;
@@ -18,14 +19,17 @@ export interface WorkspaceSummary {
   created_at: string;
   memberCount: number;
   decisionCount: number;
+  currentUserRole?: WorkspaceRole;
+  isOwner?: boolean;
 }
 
 export interface WorkspaceMemberItem {
   id: number;
   workspace_id: number;
   user_id: string;
-  role: 'admin' | 'member';
+  role: WorkspaceRole;
   joined_at: string;
+  isOwner?: boolean;
   user: {
     id: string;
     email: string;

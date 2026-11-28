@@ -8,8 +8,8 @@ import Button from '@/app/components/Button';
 import { Badge } from '@/app/components/Badge';
 import { requireUser } from '@/app/lib/auth';
 import { getWorkspaceDetails } from '@/app/lib/db';
-import { getInitials } from '@/app/lib/types';
 import WorkspaceManageControls from './WorkspaceManageControls';
+import WorkspaceMembersPanel from './WorkspaceMembersPanel';
 import DeletedDecisionBanner from './DeletedDecisionBanner';
 
 async function WorkspaceContent({ paramsPromise }: { paramsPromise: Promise<{ id: string }> }) {
@@ -22,7 +22,7 @@ async function WorkspaceContent({ paramsPromise }: { paramsPromise: Promise<{ id
     notFound();
   }
 
-  const data = await getWorkspaceDetails(workspaceId);
+  const data = await getWorkspaceDetails(workspaceId, currentUser.id);
   if (!data) {
     notFound();
   }
@@ -120,29 +120,13 @@ async function WorkspaceContent({ paramsPromise }: { paramsPromise: Promise<{ id
           </div>
 
           {/* Members */}
-          <div>
-            <h2 className="font-semibold text-gray-900 mb-4">Members ({members.length})</h2>
-            <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
-              {members.map((member) => {
-                const name = member.user.full_name?.trim() || member.user.email || 'Member';
-                return (
-                  <div key={member.id} className="flex items-center gap-3 p-4">
-                    <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold shrink-0">
-                      {getInitials(name)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{name}</p>
-                      <p className="text-xs text-gray-400 truncate">{member.user.email}</p>
-                    </div>
-                    <Badge
-                      label={member.role}
-                      color={member.role === 'admin' ? 'indigo' : 'gray'}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <WorkspaceMembersPanel
+            workspaceId={workspace.id}
+            workspaceName={workspace.name}
+            currentUserId={currentUser.id}
+            isAdmin={isAdmin}
+            members={members}
+          />
         </div>
       </div>
     </AuthenticatedShell>

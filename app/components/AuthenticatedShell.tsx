@@ -11,8 +11,8 @@ export default async function AuthenticatedShell({
 }: {
   children: React.ReactNode;
 }) {
-  const { profile } = await requireUser();
-  const workspaces = await getUserWorkspaces();
+  const { id, profile } = await requireUser();
+  const workspaces = await getUserWorkspaces(id);
 
   return (
     <div className="flex min-h-screen bg-gray-50">

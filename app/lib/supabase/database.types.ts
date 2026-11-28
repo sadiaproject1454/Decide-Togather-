@@ -342,7 +342,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      increment_option_vote: { Args: { p_option_id: number }; Returns: number }
+      add_workspace_member_by_email: {
+        Args: { p_email: string; p_role?: string; p_workspace_id: number };
+        Returns: {
+          id: number;
+          joined_at: string;
+          role: string;
+          user_id: string;
+          workspace_id: number;
+        }[];
+      };
+      increment_option_vote: { Args: { p_option_id: number }; Returns: number };
     }
     Enums: {
       [_ in never]: never

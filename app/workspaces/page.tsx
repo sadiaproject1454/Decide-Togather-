@@ -11,7 +11,7 @@ import DeletedWorkspaceBanner from './DeletedWorkspaceBanner';
 async function WorkspacesListContent() {
   await connection();
   const user = await requireUser();
-  const workspaces = await getUserWorkspaces();
+  const workspaces = await getUserWorkspaces(user.id);
 
   return (
     <AuthenticatedShell>
@@ -81,8 +81,16 @@ async function WorkspacesListContent() {
                             </div>
                           </div>
                           <Badge
-                            label={isOwner ? 'Owner' : 'Member'}
-                            color={isOwner ? 'indigo' : 'gray'}
+                            label={
+                              isOwner
+                                ? 'Owner'
+                                : ws.currentUserRole === 'admin'
+                                  ? 'Admin'
+                                  : 'Member'
+                            }
+                            color={
+                              isOwner || ws.currentUserRole === 'admin' ? 'indigo' : 'gray'
+                            }
                           />
                         </div>
 

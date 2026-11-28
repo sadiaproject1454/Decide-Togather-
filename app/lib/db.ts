@@ -6,10 +6,11 @@ import type {
   EvidenceItem,
   OptionPointType,
   WorkspaceMemberItem,
+  WorkspaceRole,
   WorkspaceSummary,
 } from '@/app/lib/types';
 
-export async function getUserWorkspaces(): Promise<WorkspaceSummary[]> {
+export async function getUserWorkspaces(currentUserId?: string): Promise<WorkspaceSummary[]> {
   const supabase = await createClient();
 
   const { data: workspaces, error } = await supabase
@@ -25,7 +26,7 @@ export async function getUserWorkspaces(): Promise<WorkspaceSummary[]> {
   const [{ data: members }, { data: decisions }] = await Promise.all([
     supabase
       .from('workspace_members')
-      .select('workspace_id')
+      .select('workspace_id, user_id, role')
       .in('workspace_id', workspaceIds),
     supabase
       .from('decisions')
@@ -33,14 +34,32 @@ export async function getUserWorkspaces(): Promise<WorkspaceSummary[]> {
       .in('workspace_id', workspaceIds),
   ]);
 
-  return workspaces.map((w) => ({
-    ...w,
-    memberCount: members?.filter((m) => m.workspace_id === w.id).length ?? 1,
-    decisionCount: decisions?.filter((d) => d.workspace_id === w.id).length ?? 0,
-  }));
+  return workspaces.map((w) => {
+    const wsMembers = members?.filter((m) => m.workspace_id === w.id) ?? [];
+    const isOwner = currentUserId ? w.owner_id === currentUserId : false;
+    const myMembership = currentUserId
+      ? wsMembers.find((m) => m.user_id === currentUserId)
+      : undefined;
+    const currentUserRole: WorkspaceRole | undefined = currentUserId
+      ? isOwner || myMembership?.role === 'admin'
+        ? 'admin'
+        : 'member'
+      : undefined;
+
+    return {
+      ...w,
+      memberCount: wsMembers.length || 1,
+      decisionCount: decisions?.filter((d) => d.workspace_id === w.id).length ?? 0,
+      isOwner,
+      currentUserRole,
+    };
+  });
 }
 
-export async function getWorkspaceDetails(workspaceId: number): Promise<{
+export async function getWorkspaceDetails(
+  workspaceId: number,
+  currentUserId?: string
+): Promise<{
   workspace: WorkspaceSummary;
   decisions: DecisionItem[];
   members: WorkspaceMemberItem[];
@@ -80,28 +99,50 @@ export async function getWorkspaceDetails(workspaceId: number): Promise<{
     options: (d.decision_options ?? []).sort((a, b) => a.id - b.id),
   }));
 
-  const members: WorkspaceMemberItem[] = (membersData ?? []).map((m) => {
-    const joinedUser = Array.isArray(m.users) ? m.users[0] : m.users;
-    return {
-      id: m.id,
-      workspace_id: m.workspace_id,
-      user_id: m.user_id,
-      role: (m.role === 'admin' ? 'admin' : 'member') as 'admin' | 'member',
-      joined_at: m.joined_at,
-      user: joinedUser ?? {
-        id: m.user_id,
-        email: '',
-        full_name: 'Member',
-        avatar_url: null,
-      },
-    };
-  });
+  const members: WorkspaceMemberItem[] = (membersData ?? [])
+    .map((m) => {
+      const joinedUser = Array.isArray(m.users) ? m.users[0] : m.users;
+      const isMemberOwner = m.user_id === ws.owner_id;
+      const normalizedRole: WorkspaceRole =
+        isMemberOwner || m.role === 'admin' ? 'admin' : 'member';
+      return {
+        id: m.id,
+        workspace_id: m.workspace_id,
+        user_id: m.user_id,
+        role: normalizedRole,
+        joined_at: m.joined_at,
+        isOwner: isMemberOwner,
+        user: joinedUser ?? {
+          id: m.user_id,
+          email: '',
+          full_name: 'Member',
+          avatar_url: null,
+        },
+      };
+    })
+    .sort((a, b) => {
+      if (a.isOwner !== b.isOwner) return a.isOwner ? -1 : 1;
+      if (a.role !== b.role) return a.role === 'admin' ? -1 : 1;
+      return a.joined_at.localeCompare(b.joined_at);
+    });
+
+  const isCurrentOwner = currentUserId ? ws.owner_id === currentUserId : false;
+  const currentMembership = currentUserId
+    ? members.find((m) => m.user_id === currentUserId)
+    : undefined;
+  const currentUserRole: WorkspaceRole | undefined = currentUserId
+    ? isCurrentOwner || currentMembership?.role === 'admin'
+      ? 'admin'
+      : 'member'
+    : undefined;
 
   return {
     workspace: {
       ...ws,
       memberCount: members.length || 1,
       decisionCount: decisions.length,
+      isOwner: isCurrentOwner,
+      currentUserRole,
     },
     decisions,
     members,
