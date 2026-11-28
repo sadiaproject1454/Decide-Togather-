@@ -101,7 +101,7 @@ export async function updateWorkspaceAction(
   revalidatePath('/dashboard');
   revalidatePath('/workspaces');
   revalidatePath(`/workspaces/${workspaceId}`);
-  revalidatePath('/decisions/new');
+  revalidatePath('/decisions', 'layout');
 
   return {
     success: `Workspace "${data.name}" updated successfully.`,
@@ -138,8 +138,7 @@ export async function deleteWorkspaceAction(
 
   revalidatePath('/dashboard');
   revalidatePath('/workspaces');
-  revalidatePath('/decisions');
-  revalidatePath('/decisions/new');
+  revalidatePath('/decisions', 'layout');
 
   redirect('/workspaces?deleted=1');
 }

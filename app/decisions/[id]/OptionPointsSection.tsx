@@ -28,16 +28,15 @@ function validatePointClient(content: string): string | null {
   return null;
 }
 
-function PointRow({
+function EditPointForm({
   point,
   decisionId,
-  onRequestDelete,
+  onClose,
 }: {
   point: DecisionOptionPointItem;
   decisionId: number;
-  onRequestDelete: (point: DecisionOptionPointItem) => void;
+  onClose: () => void;
 }) {
-  const [editing, setEditing] = useState(false);
   const [clientError, setClientError] = useState('');
   const [editState, editAction, editPending] = useActionState(updateOptionPointAction, undefined);
 
@@ -55,91 +54,100 @@ function PointRow({
     setClientError('');
   }
 
+  return (
+    <li className="rounded-lg border border-gray-200 bg-white p-3">
+      <form
+        key={`${point.id}-${point.updated_at}`}
+        action={editAction}
+        onSubmit={handleEditSubmit}
+        noValidate
+        className="space-y-2.5"
+      >
+        <input type="hidden" name="pointId" value={point.id} />
+        <input type="hidden" name="decisionId" value={decisionId} />
+
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-gray-700">
+            Edit {isPro ? 'Pro' : 'Con'}
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-xs text-gray-400 hover:text-gray-600 cursor-pointer"
+          >
+            Cancel
+          </button>
+        </div>
+
+        {errorMessage && (
+          <div
+            role="alert"
+            className="bg-red-50 border border-red-200 text-red-700 text-xs px-2.5 py-1.5 rounded-md"
+          >
+            {errorMessage}
+          </div>
+        )}
+
+        {editState?.success && !clientError && (
+          <div
+            role="status"
+            className="bg-green-50 border border-green-200 text-green-700 text-xs px-2.5 py-1.5 rounded-md"
+          >
+            ✅ {editState.success}
+          </div>
+        )}
+
+        <div>
+          <label htmlFor={`point-edit-${point.id}`} className="sr-only">
+            Edit {isPro ? 'Pro' : 'Con'} content
+          </label>
+          <textarea
+            id={`point-edit-${point.id}`}
+            name="content"
+            rows={2}
+            required
+            aria-required="true"
+            maxLength={500}
+            defaultValue={point.content}
+            onChange={() => {
+              if (clientError) setClientError('');
+            }}
+            className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="submit" size="sm" disabled={editPending}>
+            {editPending ? 'Saving…' : 'Save'}
+          </Button>
+          <Button type="button" variant="ghost" size="sm" disabled={editPending} onClick={onClose}>
+            Done
+          </Button>
+        </div>
+      </form>
+    </li>
+  );
+}
+
+function PointRow({
+  point,
+  decisionId,
+  onRequestDelete,
+}: {
+  point: DecisionOptionPointItem;
+  decisionId: number;
+  onRequestDelete: (point: DecisionOptionPointItem) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const isPro = point.type === 'pro';
+
   if (editing) {
     return (
-      <li className="rounded-lg border border-gray-200 bg-white p-3">
-        <form
-          key={`${point.id}-${point.updated_at}`}
-          action={editAction}
-          onSubmit={handleEditSubmit}
-          noValidate
-          className="space-y-2.5"
-        >
-          <input type="hidden" name="pointId" value={point.id} />
-          <input type="hidden" name="decisionId" value={decisionId} />
-
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-700">
-              Edit {isPro ? 'Pro' : 'Con'}
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                setClientError('');
-                setEditing(false);
-              }}
-              className="text-xs text-gray-400 hover:text-gray-600 cursor-pointer"
-            >
-              Cancel
-            </button>
-          </div>
-
-          {errorMessage && (
-            <div
-              role="alert"
-              className="bg-red-50 border border-red-200 text-red-700 text-xs px-2.5 py-1.5 rounded-md"
-            >
-              {errorMessage}
-            </div>
-          )}
-
-          {editState?.success && !clientError && (
-            <div
-              role="status"
-              className="bg-green-50 border border-green-200 text-green-700 text-xs px-2.5 py-1.5 rounded-md"
-            >
-              ✅ {editState.success}
-            </div>
-          )}
-
-          <div>
-            <label htmlFor={`point-edit-${point.id}`} className="sr-only">
-              Edit {isPro ? 'Pro' : 'Con'} content
-            </label>
-            <textarea
-              id={`point-edit-${point.id}`}
-              name="content"
-              rows={2}
-              required
-              aria-required="true"
-              maxLength={500}
-              defaultValue={point.content}
-              onChange={() => {
-                if (clientError) setClientError('');
-              }}
-              className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-            />
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Button type="submit" size="sm" disabled={editPending}>
-              {editPending ? 'Saving…' : 'Save'}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              disabled={editPending}
-              onClick={() => {
-                setClientError('');
-                setEditing(false);
-              }}
-            >
-              Done
-            </Button>
-          </div>
-        </form>
-      </li>
+      <EditPointForm
+        point={point}
+        decisionId={decisionId}
+        onClose={() => setEditing(false)}
+      />
     );
   }
 
@@ -150,7 +158,7 @@ function PointRow({
       }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="text-xs sm:text-sm text-gray-800 leading-relaxed break-words">
+        <p className="text-xs sm:text-sm text-gray-800 leading-relaxed break-words min-w-0 flex-1">
           {point.content}
         </p>
 
@@ -158,10 +166,7 @@ function PointRow({
           <div className="flex items-center gap-1 shrink-0">
             <button
               type="button"
-              onClick={() => {
-                setClientError('');
-                setEditing(true);
-              }}
+              onClick={() => setEditing(true)}
               aria-label={`Edit ${isPro ? 'pro' : 'con'} ${point.content}`}
               className="text-[11px] font-medium text-gray-600 hover:text-indigo-600 px-2 py-0.5 rounded border border-gray-200 bg-white hover:border-indigo-200 transition-colors cursor-pointer"
             >
@@ -194,6 +199,106 @@ function PointRow({
   );
 }
 
+function AddPointForm({
+  type,
+  decisionId,
+  optionId,
+  workspaceId,
+}: {
+  type: OptionPointType;
+  decisionId: number;
+  optionId: number;
+  workspaceId: number;
+}) {
+  const [clientError, setClientError] = useState('');
+  const [addState, addAction, addPending] = useActionState(createOptionPointAction, undefined);
+
+  const formRef = useRef<HTMLFormElement>(null);
+  const lastActionId = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (addState?.success && addState.actionId && addState.actionId !== lastActionId.current) {
+      lastActionId.current = addState.actionId;
+      formRef.current?.reset();
+    }
+  }, [addState]);
+
+  const isPro = type === 'pro';
+  const errorMessage = clientError || addState?.error;
+
+  function handleAddSubmit(e: React.FormEvent<HTMLFormElement>) {
+    const formData = new FormData(e.currentTarget);
+    const err = validatePointClient(String(formData.get('content') ?? ''));
+    if (err) {
+      e.preventDefault();
+      setClientError(err);
+      return;
+    }
+    setClientError('');
+  }
+
+  return (
+    <form
+      ref={formRef}
+      action={addAction}
+      onSubmit={handleAddSubmit}
+      noValidate
+      className="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-2.5"
+    >
+      <input type="hidden" name="decisionId" value={decisionId} />
+      <input type="hidden" name="optionId" value={optionId} />
+      <input type="hidden" name="workspaceId" value={workspaceId} />
+      <input type="hidden" name="type" value={type} />
+
+      {errorMessage && (
+        <div
+          role="alert"
+          className="bg-red-50 border border-red-200 text-red-700 text-xs px-2.5 py-1.5 rounded-md"
+        >
+          {errorMessage}
+        </div>
+      )}
+
+      {addState?.success && !clientError && (
+        <div
+          role="status"
+          className="bg-green-50 border border-green-200 text-green-700 text-xs px-2.5 py-1.5 rounded-md"
+        >
+          ✅ {addState.success}
+        </div>
+      )}
+
+      <div>
+        <label
+          htmlFor={`add-${type}-${optionId}`}
+          className="block text-xs font-medium text-gray-700 mb-1"
+        >
+          {isPro ? 'Positive point' : 'Negative point'} <span className="text-red-500">*</span>
+        </label>
+        <textarea
+          id={`add-${type}-${optionId}`}
+          name="content"
+          rows={2}
+          required
+          aria-required="true"
+          maxLength={500}
+          onChange={() => {
+            if (clientError) setClientError('');
+          }}
+          placeholder={isPro ? 'e.g. Good battery life' : 'e.g. Limited storage'}
+          className="w-full px-2.5 py-1.5 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+        />
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Button type="submit" size="sm" disabled={addPending}>
+          {addPending ? 'Adding…' : isPro ? 'Save Pro' : 'Save Con'}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 function PointColumn({
   type,
   decisionId,
@@ -212,33 +317,8 @@ function PointColumn({
   onRequestDelete: (point: DecisionOptionPointItem) => void;
 }) {
   const [showAdd, setShowAdd] = useState(false);
-  const [clientError, setClientError] = useState('');
-  const [addState, addAction, addPending] = useActionState(createOptionPointAction, undefined);
-
-  const formRef = useRef<HTMLFormElement>(null);
-  const lastActionId = useRef<number | undefined>(undefined);
-
-  useEffect(() => {
-    if (addState?.success && addState.actionId && addState.actionId !== lastActionId.current) {
-      lastActionId.current = addState.actionId;
-      formRef.current?.reset();
-    }
-  }, [addState]);
-
   const isPro = type === 'pro';
   const heading = isPro ? 'Pros' : 'Cons';
-  const errorMessage = clientError || addState?.error;
-
-  function handleAddSubmit(e: React.FormEvent<HTMLFormElement>) {
-    const formData = new FormData(e.currentTarget);
-    const err = validatePointClient(String(formData.get('content') ?? ''));
-    if (err) {
-      e.preventDefault();
-      setClientError(err);
-      return;
-    }
-    setClientError('');
-  }
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-3.5 sm:p-4 flex flex-col gap-3">
@@ -258,10 +338,7 @@ function PointColumn({
 
         <button
           type="button"
-          onClick={() => {
-            setClientError('');
-            setShowAdd((prev) => !prev);
-          }}
+          onClick={() => setShowAdd((prev) => !prev)}
           aria-expanded={showAdd}
           aria-label={isPro ? `Add Pro for ${optionLabel}` : `Add Con for ${optionLabel}`}
           className={`text-xs font-medium px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
@@ -275,67 +352,12 @@ function PointColumn({
       </div>
 
       {showAdd && (
-        <form
-          ref={formRef}
-          action={addAction}
-          onSubmit={handleAddSubmit}
-          noValidate
-          className="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-2.5"
-        >
-          <input type="hidden" name="decisionId" value={decisionId} />
-          <input type="hidden" name="optionId" value={optionId} />
-          <input type="hidden" name="workspaceId" value={workspaceId} />
-          <input type="hidden" name="type" value={type} />
-
-          {errorMessage && (
-            <div
-              role="alert"
-              className="bg-red-50 border border-red-200 text-red-700 text-xs px-2.5 py-1.5 rounded-md"
-            >
-              {errorMessage}
-            </div>
-          )}
-
-          {addState?.success && !clientError && (
-            <div
-              role="status"
-              className="bg-green-50 border border-green-200 text-green-700 text-xs px-2.5 py-1.5 rounded-md"
-            >
-              ✅ {addState.success}
-            </div>
-          )}
-
-          <div>
-            <label
-              htmlFor={`add-${type}-${optionId}`}
-              className="block text-xs font-medium text-gray-700 mb-1"
-            >
-              {isPro ? 'Positive point' : 'Negative point'}{' '}
-              <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              id={`add-${type}-${optionId}`}
-              name="content"
-              rows={2}
-              required
-              aria-required="true"
-              maxLength={500}
-              onChange={() => {
-                if (clientError) setClientError('');
-              }}
-              placeholder={
-                isPro ? 'e.g. Good battery life' : 'e.g. Limited storage'
-              }
-              className="w-full px-2.5 py-1.5 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button type="submit" size="sm" disabled={addPending}>
-              {addPending ? 'Adding…' : isPro ? 'Save Pro' : 'Save Con'}
-            </Button>
-          </div>
-        </form>
+        <AddPointForm
+          type={type}
+          decisionId={decisionId}
+          optionId={optionId}
+          workspaceId={workspaceId}
+        />
       )}
 
       {items.length === 0 ? (

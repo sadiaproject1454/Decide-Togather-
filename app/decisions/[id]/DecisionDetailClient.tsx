@@ -35,6 +35,105 @@ function formatDateInputValue(isoString: string | null): string {
   return date.toISOString().slice(0, 10);
 }
 
+function buildEditableOptions(options: DecisionItem['options']): EditableOption[] {
+  if (options.length >= 2) {
+    return options.map((o) => ({ id: o.id, label: o.label }));
+  }
+  return [
+    ...options.map((o) => ({ id: o.id, label: o.label })),
+    ...Array.from({ length: Math.max(0, 2 - options.length) }, () => ({
+      id: null,
+      label: '',
+    })),
+  ];
+}
+
+function DecisionEditOptionsFields({
+  initialOptions,
+  onOptionChange,
+}: {
+  initialOptions: DecisionItem['options'];
+  onOptionChange: () => void;
+}) {
+  const [editOptions, setEditOptions] = useState<EditableOption[]>(() =>
+    buildEditableOptions(initialOptions)
+  );
+
+  function addEditOption() {
+    if (editOptions.length < 8) {
+      setEditOptions([...editOptions, { id: null, label: '' }]);
+      onOptionChange();
+    }
+  }
+
+  function updateEditOption(index: number, label: string) {
+    const next = [...editOptions];
+    next[index] = { ...next[index], label };
+    setEditOptions(next);
+    onOptionChange();
+  }
+
+  function removeEditOption(index: number) {
+    if (editOptions.length > 2) {
+      setEditOptions(editOptions.filter((_, i) => i !== index));
+      onOptionChange();
+    }
+  }
+
+  return (
+    <div className="pt-2 border-t border-gray-100">
+      <div className="flex items-center justify-between mb-2">
+        <label className="text-sm font-medium text-gray-700">
+          Options ({editOptions.length}/8)
+        </label>
+        <span className="text-xs text-gray-400">Minimum 2 options</span>
+      </div>
+
+      <div className="space-y-2.5">
+        {editOptions.map((opt, idx) => (
+          <div key={opt.id ?? `new-${idx}`} className="flex items-center gap-2">
+            <input type="hidden" name="optionIds" value={opt.id ?? ''} />
+            <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold shrink-0">
+              {idx + 1}
+            </span>
+            <input
+              name="optionLabels"
+              type="text"
+              required={idx < 2}
+              maxLength={120}
+              value={opt.label}
+              onChange={(e) => updateEditOption(idx, e.target.value)}
+              placeholder={`Option ${idx + 1}`}
+              className="flex-1 px-3.5 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            {editOptions.length > 2 && (
+              <button
+                type="button"
+                onClick={() => removeEditOption(idx)}
+                className="w-8 h-8 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors text-lg leading-none cursor-pointer"
+                title="Remove option"
+                aria-label={`Remove option ${idx + 1}`}
+              >
+                ×
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {editOptions.length < 8 && (
+        <button
+          type="button"
+          onClick={addEditOption}
+          className="mt-3 text-sm text-indigo-600 hover:text-indigo-700 font-medium cursor-pointer"
+        >
+          + Add option
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function DecisionDetailClient({
   decision,
   workspaceName,
@@ -45,63 +144,27 @@ export default function DecisionDetailClient({
 }: Props) {
   const [mode, setMode] = useState<'view' | 'edit' | 'delete'>('view');
   const [clientError, setClientError] = useState('');
-  const [editOptions, setEditOptions] = useState<EditableOption[]>(() =>
-    decision.options.length >= 2
-      ? decision.options.map((o) => ({ id: o.id, label: o.label }))
-      : [
-          ...decision.options.map((o) => ({ id: o.id, label: o.label })),
-          ...Array.from({ length: Math.max(0, 2 - decision.options.length) }, () => ({
-            id: null,
-            label: '',
-          })),
-        ]
-  );
+  const [showEditFeedback, setShowEditFeedback] = useState(false);
 
   const [editState, editAction, editPending] = useActionState(updateDecisionAction, undefined);
   const [deleteState, deleteAction, deletePending] = useActionState(deleteDecisionAction, undefined);
 
+  const optionsSignature = decision.options.map((o) => `${o.id}:${o.label}`).join('|');
+
   function openEditMode() {
-    setEditOptions(
-      decision.options.length >= 2
-        ? decision.options.map((o) => ({ id: o.id, label: o.label }))
-        : [
-            ...decision.options.map((o) => ({ id: o.id, label: o.label })),
-            ...Array.from({ length: Math.max(0, 2 - decision.options.length) }, () => ({
-              id: null,
-              label: '',
-            })),
-          ]
-    );
     setClientError('');
+    setShowEditFeedback(false);
     setMode('edit');
-  }
-
-  function addEditOption() {
-    if (editOptions.length < 8) {
-      setEditOptions([...editOptions, { id: null, label: '' }]);
-      if (clientError) setClientError('');
-    }
-  }
-
-  function updateEditOption(index: number, label: string) {
-    const next = [...editOptions];
-    next[index] = { ...next[index], label };
-    setEditOptions(next);
-    if (clientError) setClientError('');
-  }
-
-  function removeEditOption(index: number) {
-    if (editOptions.length > 2) {
-      setEditOptions(editOptions.filter((_, i) => i !== index));
-      if (clientError) setClientError('');
-    }
   }
 
   function handleEditSubmit(e: React.FormEvent<HTMLFormElement>) {
     const formData = new FormData(e.currentTarget);
     const title = String(formData.get('title') ?? '').trim();
     const description = String(formData.get('description') ?? '').trim();
-    const cleanedOptions = editOptions.map((o) => o.label.trim()).filter(Boolean);
+    const cleanedOptions = formData
+      .getAll('optionLabels')
+      .map((label) => String(label).trim())
+      .filter(Boolean);
 
     if (title.length < 3) {
       e.preventDefault();
@@ -136,9 +199,10 @@ export default function DecisionDetailClient({
     }
 
     setClientError('');
+    setShowEditFeedback(true);
   }
 
-  const editError = clientError || editState?.error;
+  const editError = clientError || (showEditFeedback ? editState?.error : undefined);
 
   return (
     <div className="p-4 sm:p-6 md:p-8 max-w-4xl mx-auto">
@@ -215,6 +279,7 @@ export default function DecisionDetailClient({
                 if (mode === 'edit') {
                   setMode('view');
                   setClientError('');
+                  setShowEditFeedback(false);
                 } else {
                   openEditMode();
                 }
@@ -228,6 +293,7 @@ export default function DecisionDetailClient({
               size="sm"
               onClick={() => {
                 setClientError('');
+                setShowEditFeedback(false);
                 setMode(mode === 'delete' ? 'view' : 'delete');
               }}
             >
@@ -235,7 +301,7 @@ export default function DecisionDetailClient({
             </Button>
           </div>
 
-          {editState?.success && mode === 'edit' && !clientError && (
+          {showEditFeedback && editState?.success && mode === 'edit' && !clientError && (
             <div
               role="status"
               className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-xl"
@@ -383,56 +449,13 @@ export default function DecisionDetailClient({
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-gray-100">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    Options ({editOptions.length}/8)
-                  </label>
-                  <span className="text-xs text-gray-400">Minimum 2 options</span>
-                </div>
-
-                <div className="space-y-2.5">
-                  {editOptions.map((opt, idx) => (
-                    <div key={opt.id ?? `new-${idx}`} className="flex items-center gap-2">
-                      <input type="hidden" name="optionIds" value={opt.id ?? ''} />
-                      <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold shrink-0">
-                        {idx + 1}
-                      </span>
-                      <input
-                        name="optionLabels"
-                        type="text"
-                        required={idx < 2}
-                        maxLength={120}
-                        value={opt.label}
-                        onChange={(e) => updateEditOption(idx, e.target.value)}
-                        placeholder={`Option ${idx + 1}`}
-                        className="flex-1 px-3.5 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      />
-                      {editOptions.length > 2 && (
-                        <button
-                          type="button"
-                          onClick={() => removeEditOption(idx)}
-                          className="w-8 h-8 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors text-lg leading-none cursor-pointer"
-                          title="Remove option"
-                          aria-label={`Remove option ${idx + 1}`}
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {editOptions.length < 8 && (
-                  <button
-                    type="button"
-                    onClick={addEditOption}
-                    className="mt-3 text-sm text-indigo-600 hover:text-indigo-700 font-medium cursor-pointer"
-                  >
-                    + Add option
-                  </button>
-                )}
-              </div>
+              <DecisionEditOptionsFields
+                key={optionsSignature}
+                initialOptions={decision.options}
+                onOptionChange={() => {
+                  if (clientError) setClientError('');
+                }}
+              />
 
               <div className="flex flex-wrap items-center gap-3 pt-2">
                 <Button type="submit" size="sm" disabled={editPending}>
@@ -444,6 +467,7 @@ export default function DecisionDetailClient({
                   size="sm"
                   onClick={() => {
                     setClientError('');
+                    setShowEditFeedback(false);
                     setMode('view');
                   }}
                 >
